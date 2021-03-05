@@ -1,9 +1,11 @@
+import numpy as np
+from scipy.stats import multivariate_normal as gaussian
+
 import julia
 julia.install()
+
 from dpmmpython.priors import niw, multinomial
 from julia import DPMMSubClusters
-import numpy as np
-
 
 
 class DPMMPython:
@@ -57,7 +59,7 @@ class DPMMPython:
                                           outlier_params=outlier_params)
             
         weights = results[2] / np.sum(results[2])
-        return results[0],results[1],results[-1]
+        return results[0],results[1],results[-1],weights
 
     @staticmethod
     def get_model_ll(points,labels,clusters):
@@ -96,7 +98,66 @@ class DPMMPython:
         return data,gt
 
 
+class DPMMPredictor:
+    
+    """
+    Wrapper class for DPMMSubClusters results. Naive implementation of 
+    predicted labels and responsibilities for new observations.
+    
+    (It's naive because it uses scipy's multivariate normal class 
+    rather than making use of information about the determinant and
+    Cholesky decomposition of the precision matrix that are stored in
+    the mv_gaussian objects that come back with DPMMSubClusters.)
+    """
 
+    def predict(self, X: np.array) -> np.array:
+        """
+        Return most likely label for each observation in new data X
+        
+        X :: NxD where N is number of new observations and D is dimensionality
+        
+        Returns an Nx1 array of most likely labels
+        n.b.: To ensure contiguity with the results generated in Julia,
+        labels are integers with index beginning at 1
+        """
+        
+        return np.argmax(self.predict_proba(X),1) + 1
+        
+    def predict_proba(self, X: np.array) -> np.array:
+        """ 
+        Return responsibilites of components conditional on new data X
+        
+        X :: NxD where N is number of new observations and D is dimensionality
+        
+        Returns an NxK array where K is the number of components
+        
+        """
+        
+        resp = np.array([self._dists[k].pdf(X) / 
+                         np.sum(
+                             np.array(
+                                 [self._dists[i].pdf(X) for i in 
+                                  range(self._k)]
+                             ), 0)
+                         for k in range(self._k)]).T
+        return resp
+        
+    def __init__(self, dpmm: tuple):
+        """
+        dpmm: output from DPMMPython.fit()
+        """
+        from julia import Main as jl
+        
+        jl.dpmm = dpmm
+        self._fitted = dpmm
+        self._k = len(dpmm[1]) # infer k
+        self._d = jl.eval("dpmm[2][1].μ").shape[0] # infer d
+        self._dists = [gaussian(jl.eval(f"dpmm[2][{i}].μ"), 
+                                jl.eval(f"dpmm[2][{i}].Σ")) 
+                                for i in range(1, self._k+1)]
+        self._weights = jl.eval("dpmm[4]")
+        
+        
 if __name__ == "__main__":
     j = julia.Julia()
     data,gt = DPMMPython.generate_gaussian_data(10000, 2, 10, 100.0)
