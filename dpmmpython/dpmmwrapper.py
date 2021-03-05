@@ -41,9 +41,9 @@ class DPMMPython:
             iterations= 100, verbose = False,
             burnout = 15, gt = None, outlier_weight = 0, outlier_params = None):
         """
-        Wrapper for DPMMSubClusters fit, reffer to "https://bgu-cs-vil.github.io/DPMMSubClusters.jl/stable/usage/" for specification
+        Wrapper for DPMMSubClusters fit, refer to "https://bgu-cs-vil.github.io/DPMMSubClusters.jl/stable/usage/" for specification
         Note that directly working with the returned clusters can be problematic software displaying the workspace (such as PyCharm debugger).
-        :return: labels, clusters, sublabels
+        :return: labels, clusters, sublabels, renormalized weights
         """
         if prior == None:
             results = DPMMSubClusters.fit(data,alpha, iters = iterations,
@@ -55,6 +55,8 @@ class DPMMPython:
                                           verbose=verbose, burnout=burnout,
                                           gt=gt, outlier_weight=outlier_weight,
                                           outlier_params=outlier_params)
+            
+        weights = results[2] / np.sum(results[2])
         return results[0],results[1],results[-1]
 
     @staticmethod
