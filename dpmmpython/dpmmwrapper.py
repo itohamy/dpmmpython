@@ -13,6 +13,7 @@ class DPMMPython:
      Wrapper for the DPMMSubCluster Julia package
      """
 
+
     @staticmethod
     def create_prior(dim,mean_prior,mean_str,cov_prior,cov_str):
         """
@@ -38,6 +39,7 @@ class DPMMPython:
         prior =niw(mean_str,prior_mean,dim + cov_str, prior_covariance)
         return prior
 
+
     @staticmethod
     def fit(data,alpha, prior = None,
             iterations= 100, verbose = False,
@@ -61,6 +63,7 @@ class DPMMPython:
         weights = results[2] / np.sum(results[2])
         return results[0],results[1],results[-1],weights
 
+
     @staticmethod
     def get_model_ll(points,labels,clusters):
         """
@@ -71,6 +74,7 @@ class DPMMPython:
         :return: vector with each cluster avg ll
         """
         return DPMMSubClusters.cluster_statistics(points,labels,clusters)[0]
+
 
     @staticmethod
     def add_procs(procs_count):
@@ -98,7 +102,7 @@ class DPMMPython:
         return data,gt
 
 
-class DPMMPredictor:
+class DPMModel(DPMMPython):
     
     """
     Wrapper class for DPMMSubClusters results. Naive implementation of 
@@ -109,6 +113,7 @@ class DPMMPredictor:
     Cholesky decomposition of the precision matrix that are stored in
     the mv_gaussian objects that come back with DPMMSubClusters.)
     """
+
 
     def predict(self, X: np.array) -> np.array:
         """
@@ -122,6 +127,7 @@ class DPMMPredictor:
         """
         
         return np.argmax(self.predict_proba(X),1) + 1
+  
         
     def predict_proba(self, X: np.array) -> np.array:
         """ 
@@ -141,20 +147,27 @@ class DPMMPredictor:
                              ), 0)
                          for k in range(self._k)]).T
         return resp
+    
         
-    def __init__(self, dpmm: tuple):
+    def __init__(self, *args, **kwargs):
         """
         dpmm: output from DPMMPython.fit()
         """
-        from julia import Main as jl
         
-        jl.dpmm = dpmm
-        self._fitted = dpmm
-        self._k = len(dpmm[1]) # infer k
+        from julia import Main as jl # Objects attached -> use local namespace
+        if 'seed' in kwargs:
+            from julia import Random
+            seed = kwargs.pop('seed')
+            jl.eval(f"Random.seed!({seed})"); 
+        
+        self._fitted = self.fit(*args, **kwargs)
+        self._k = len(self._fitted[1]) # infer k
+        
+        jl.dpmm = self._fitted
+        
         self._d = jl.eval("dpmm[2][1].μ").shape[0] # infer d
         self._dists = [gaussian(jl.eval(f"dpmm[2][{i}].μ"), 
-                                jl.eval(f"dpmm[2][{i}].Σ")) 
-                                for i in range(1, self._k+1)]
+                                jl.eval(f"dpmm[2][{i}].Σ")) for i in range(1, self._k+1)]
         self._weights = jl.eval("dpmm[4]")
         
         
