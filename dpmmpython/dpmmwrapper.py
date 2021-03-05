@@ -157,13 +157,13 @@ class DPMModel(DPMMPython):
         from julia import Main as jl # Objects attached -> use local namespace
         if 'seed' in kwargs:
             from julia import Random
-            seed = kwargs.pop('seed')
-            jl.eval(f"Random.seed!({seed})"); 
+            self.seed = kwargs.pop('seed')
+            jl.eval(f"Random.seed!({self.seed})"); 
         
-        self._fitted = self.fit(*args, **kwargs)
-        self._k = len(self._fitted[1]) # infer k
+        self.fitted = self.fit(*args, **kwargs)
+        self._k = len(self.fitted[1]) # infer k
         
-        jl.dpmm = self._fitted
+        jl.dpmm = self.fitted
         
         self._d = jl.eval("dpmm[2][1].μ").shape[0] # infer d
         self._dists = [gaussian(jl.eval(f"dpmm[2][{i}].μ"), 
