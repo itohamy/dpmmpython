@@ -122,11 +122,11 @@ class DPMModel(DPMMPython):
         X :: NxD where N is number of new observations and D is dimensionality
         
         Returns an Nx1 array of most likely labels
-        n.b.: To ensure contiguity with the results generated in Julia,
-        labels are integers with index beginning at 1
+        n.b.: Results generated in Julia have labels that begin at 1, 
+        labels must be adjusted before export or this won't be correct
         """
         
-        return np.argmax(self.predict_proba(X),1) + 1
+        return np.argmax(self.predict_proba(X),1)
   
         
     def predict_proba(self, X: np.array) -> np.array:
@@ -160,15 +160,18 @@ class DPMModel(DPMMPython):
             self.seed = kwargs.pop('seed')
             jl.eval(f"Random.seed!({self.seed})"); 
         
-        self.fitted = self.fit(*args, **kwargs)
-        self._k = len(self.fitted[1]) # infer k
+        fitted = self.fit(*args, **kwargs)
+        # adjust labels for python, where indexes begin at 0
+        fitted[0] = fitted[0] - 1
+        self._k = len(fitted[1]) # infer k
         
-        jl.dpmm = self.fitted
+        jl.dpmm = fitted
         
         self._d = jl.eval("dpmm[2][1].μ").shape[0] # infer d
         self._dists = [gaussian(jl.eval(f"dpmm[2][{i}].μ"), 
                                 jl.eval(f"dpmm[2][{i}].Σ")) for i in range(1, self._k+1)]
         self._weights = jl.eval("dpmm[4]")
+        self._sublabels = jl.eval("dpmm[3]")
         
         
 if __name__ == "__main__":
