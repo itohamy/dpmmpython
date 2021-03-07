@@ -126,7 +126,17 @@ class DPMModel(DPMMPython):
         labels must be adjusted before export or this won't be correct
         """
         
-        return np.argmax(self.predict_proba(X),1)
+        
+        if len(X.shape) == 1:
+            if X.shape[0] == self._d:
+                # to conform to expected output from sklearn
+                return np.array([np.argmax(self.predict_proba(X))])
+            else:
+                raise Exception
+        elif X.shape[1] != self._d:
+            raise Exception
+        else:
+            return np.argmax(self.predict_proba(X), 1)
   
         
     def predict_proba(self, X: np.array) -> np.array:
@@ -139,14 +149,15 @@ class DPMModel(DPMMPython):
         
         """
         
-        resp = np.array([self._dists[k].pdf(X) / 
-                         np.sum(
-                             np.array(
-                                 [self._dists[i].pdf(X) for i in 
-                                  range(self._k)]
-                             ), 0)
-                         for k in range(self._k)]).T
-        return resp
+        resp = np.array([((np.log(self._weights[k]) + 
+                           self._dists[k].logpdf(X)) -
+                           np.log(np.sum([self._weights[i] * 
+                                          self._dists[i].pdf(X) for i
+                                          in range(self._k)], 0)
+                                          ))
+                           for k in range(self._k)]).T
+        
+        return np.exp(resp)
     
         
     def __init__(self, *args, **kwargs):
