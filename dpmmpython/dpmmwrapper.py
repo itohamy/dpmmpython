@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import multivariate_normal as gaussian
-
+from scipy.special import logsumexp
 import julia
 julia.install()
 
@@ -105,13 +105,10 @@ class DPMMPython:
 class DPMModel(DPMMPython):
     
     """
-    Wrapper class for DPMMSubClusters results. Naive implementation of 
+    Wrapper class for DPMMSubClusters results. Adds implementation of 
     predicted labels and responsibilities for new observations.
     
-    (It's naive because it uses scipy's multivariate normal class 
-    rather than making use of information about the determinant and
-    Cholesky decomposition of the precision matrix that are stored in
-    the mv_gaussian objects that come back with DPMMSubClusters.)
+    Broken.
     """
 
 
@@ -148,16 +145,25 @@ class DPMModel(DPMMPython):
         Returns an NxK array where K is the number of components
         
         """
+        # get the log prob
+        n_samples = X.shape[0]
         
-        resp = np.array([((np.log(self._weights[k]) + 
-                           self._dists[k].logpdf(X)) -
-                           np.log(np.sum([self._weights[i] * 
-                                          self._dists[i].pdf(X) for i
-                                          in range(self._k)], 0)
-                                          ))
-                           for k in range(self._k)]).T
+        log_prob = np.empty((n_samples, self._k))
         
-        return np.exp(resp)
+        for k in range(self._k):
+            y = np.dot(X, 
+                       self._invchol[k]) - np.dot(self._mu[k], 
+                                                  self._invchol[k])
+            # These are the numerators
+            log_prob[:, k] = np.sum(np.square(y), axis=1)
+        
+        # get the broadcasting right here
+        denominator = logsumexp(log_prob, 
+                                   (self._weights * np.trace(self._invchol, 
+                                                             axis1=1, axis2=2)))
+                                   
+        # again, check broadcasting
+        resp = log_prob - denominator
     
         
     def __init__(self, *args, **kwargs):
@@ -172,18 +178,32 @@ class DPMModel(DPMMPython):
             jl.eval(f"Random.seed!({self.seed})"); 
         
         fitted = self.fit(*args, **kwargs)
-        # adjust labels for python, where indexes begin at 0
+        # adjust labels for python, where indexing begins at 0
         self._labels = fitted[0] - 1
         self._k = len(fitted[1]) # infer k
         
         jl.dpmm = fitted
         
         self._d = jl.eval("dpmm[2][1].μ").shape[0] # infer d
-        self._dists = [gaussian(jl.eval(f"dpmm[2][{i}].μ"), 
-                                jl.eval(f"dpmm[2][{i}].Σ")) for i in range(1, self._k+1)]
         self._weights = jl.eval("dpmm[4]")
         self._sublabels = jl.eval("dpmm[3]")
         
+        self._mu = np.empty((self._k, self._d))
+        self._sigma = np.empty((self._k, self._d, self._d))
+        self._logdetsigma = np.empty(self._k)
+        self._invsigma = np.empty((self._k, self._d, self._d))
+        self._invchol = np.empty((self._k, self._d, self._d))
+        
+        for i in range(1, self._k+1):
+            self._mu[i-1] = jl.eval(f"dpmm[2][{i}].μ")
+            self._sigma[i-1] = jl.eval(f"dpmm[2][{i}].Σ")
+            self._logdetsigma[i-1] = jl.eval(f"dpmm[2][{i}].logdetΣ")
+            self._invsigma[i-1] = jl.eval(f"dpmm[2][{i}].invΣ")
+            self._invchol[i-1] = jl.eval(f"dpmm[2][{i}].invChol")
+        
+        # This is 6x faster than np.linalg.det    
+        self._detinvchol = np.prod(
+            np.diagonal(model._invchol, axis1=1, axis2=2), axis=1)
         
 if __name__ == "__main__":
     j = julia.Julia()
