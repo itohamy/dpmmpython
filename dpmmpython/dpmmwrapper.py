@@ -107,8 +107,7 @@ class DPMModel(DPMMPython):
     """
     Wrapper class for DPMMSubClusters results. Adds implementation of 
     predicted labels and responsibilities for new observations.
-    
-    Broken.
+
     """
 
 
