@@ -120,7 +120,7 @@ class DPMModel(DPMMPython):
         
         Returns an Nx1 array of most likely labels
         n.b.: Results generated in Julia have labels that begin at 1, 
-        labels must be adjusted before export or this won't be correct
+        in this output the first component has label 0.
         """
         
         
@@ -145,25 +145,25 @@ class DPMModel(DPMMPython):
         Returns an NxK array where K is the number of components
         
         """
-        # get the log prob
-        n_samples = X.shape[0]
+        
+        if len(X.shape) == 1:
+            n_features = X.shape[0]
+        else:
+            n_samples, n_features = X.shape
         
         log_prob = np.empty((n_samples, self._k))
-        
-        for k in range(self._k):
-            y = np.dot(X, 
-                       self._invchol[k]) - np.dot(self._mu[k], 
-                                                  self._invchol[k])
-            # These are the numerators
-            log_prob[:, k] = np.sum(np.square(y), axis=1)
-        
-        # get the broadcasting right here
-        denominator = logsumexp(log_prob, 
-                                   (self._weights * np.trace(self._invchol, 
-                                                             axis1=1, axis2=2)))
-                                   
-        # again, check broadcasting
-        resp = log_prob - denominator
+    
+        for j in range(self._k):
+            y = np.dot(self._invchol[j], (X - self._mu[j]).T)
+            log_prob[:, j] = np.sum(np.square(y), axis=0)
+    
+        denom_weights = self._weights * self._det_sigma_inv_sqrt
+    
+        log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 
+                           0.5 * log_prob)
+        resp_unnorm = np.exp(log_resp_unnorm)
+        resp = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T
+        return resp
     
         
     def __init__(self, *args, **kwargs):
@@ -201,9 +201,7 @@ class DPMModel(DPMMPython):
             self._invsigma[i-1] = jl.eval(f"dpmm[2][{i}].invΣ")
             self._invchol[i-1] = jl.eval(f"dpmm[2][{i}].invChol")
         
-        # This is 6x faster than np.linalg.det    
-        self._detinvchol = np.prod(
-            np.diagonal(model._invchol, axis1=1, axis2=2), axis=1)
+        self._det_sigma_inv_sqrt = 1/np.sqrt(np.exp(self._logdetsigma))
         
 if __name__ == "__main__":
     j = julia.Julia()
