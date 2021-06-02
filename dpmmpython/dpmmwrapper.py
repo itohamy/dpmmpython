@@ -61,7 +61,7 @@ class DPMMPython:
                                           outlier_params=outlier_params)
             
         weights = results[2] / np.sum(results[2])
-        return results[0],results[1],results[-1],weights
+        return results[0],results[1],results[-1],weights, results[-2]
 
 
     @staticmethod
@@ -186,8 +186,9 @@ class DPMModel(DPMMPython):
         jl.dpmm = fitted
         
         self._d = jl.eval("dpmm[2][1].μ").shape[0] # infer d
-        self._weights = jl.eval("dpmm[4]")
         self._sublabels = jl.eval("dpmm[3]")
+        self._weights = jl.eval("dpmm[4]")
+        self._label_mapping = jl.eval("dpmm[5]")
         
         self._mu = np.empty((self._k, self._d))
         self._sigma = np.empty((self._k, self._d, self._d))
