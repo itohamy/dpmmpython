@@ -132,7 +132,8 @@ class DPMModel(DPMMPython):
         elif X.shape[1] != self._d:
             raise Exception
         else:
-            return np.argmax(self.predict_proba(X), 1)
+            likely_labels = np.argmax(self.predict_proba(X), 1)
+            return [self._label_mapping[x] for x in likely_labels]
   
         
     def predict_proba(self, X: np.array) -> np.array:
