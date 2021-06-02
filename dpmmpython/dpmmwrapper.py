@@ -170,6 +170,8 @@ class DPMModel(DPMMPython):
         dpmm: output from DPMMPython.fit()
         """
         
+        print("Irit's wrapper!")
+
         from julia import Main as jl # Objects attached -> use local namespace
         if 'seed' in kwargs:
             from julia import Random
