@@ -181,7 +181,7 @@ class DPMModel(DPMMPython):
         
         fitted = self.fit(*args, **kwargs)
         # adjust labels for python, where indexing begins at 0
-        self._labels = fitted[0] - 1
+        self._labels = fitted[0]
         self._k = len(fitted[1]) # infer k
         
         jl.dpmm = fitted
