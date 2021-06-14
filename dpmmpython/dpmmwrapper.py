@@ -171,7 +171,7 @@ class DPMModel(DPMMPython):
 
         return resp
     
-    def logsumexp_trick(log_resp_unnorm):
+    def logsumexp_trick(self, log_resp_unnorm):
         # log_resp_unnorm is (N,K)
         c = np.max(log_resp_unnorm, axis=1)  # (N,1)
         print('c', c.shape)
