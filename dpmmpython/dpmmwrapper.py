@@ -173,11 +173,11 @@ class DPMModel(DPMMPython):
     
     def logsumexp_trick(self, log_resp_unnorm):
         # log_resp_unnorm is (N,K)
-        c = np.max(log_resp_unnorm, axis=1)  # (N,1)
+        c = np.expand_dims(np.max(log_resp_unnorm, axis=1), axis=1)  # (N,1)
         print('c', c.shape)
-        tmp = c + np.log(np.sum(np.exp(log_resp_unnorm - c), axis=1))  # (N,1)
+        tmp = c + np.expand_dims(np.log(np.sum(np.exp(log_resp_unnorm - c), axis=1)), axis=-1)  # (N,1)
         print('tmp', tmp.shape)
-        return c + np.log(np.sum(np.exp(log_resp_unnorm - c)))
+        return tmp
         
     def __init__(self, *args, **kwargs):
         """
