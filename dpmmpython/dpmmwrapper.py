@@ -160,19 +160,15 @@ class DPMModel(DPMMPython):
         #denom_weights = self._weights * self._det_sigma_inv_sqrt
     
         log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 0.5 * log_prob)   # (N, K)
-        resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
-        resp = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T   # (N, K)
+        
+        # resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
+        # resp = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T   # (N, K)
 
         logsum = self.logsumexp_trick(log_resp_unnorm)   # (N, 1)
         resp_unnorm2 = np.exp(log_resp_unnorm - logsum)     # (N, K)
         resp2 = (resp_unnorm2.T / np.sum(resp_unnorm2, axis=1)).T   # (N, K)
 
-        print(resp[2,0], resp2[2,0])
-        print(resp[50,0], resp2[50,0])
-        print(resp[40,1], resp2[40,1])
-        print(resp[20,2], resp2[20,2])
-
-        return resp
+        return resp2
     
     def logsumexp_trick(self, log_resp_unnorm):
         # log_resp_unnorm is (N,K)
