@@ -126,10 +126,6 @@ class DPMModel(DPMMPython):
         if len(X.shape) == 1:
             if X.shape[0] == self._d:
                 # to conform to expected output from sklearn
-                pp = self.predict_proba(X)
-                print(pp)
-                print('---')
-                print([np.argmax(pp)])
                 return np.array([np.argmax(self.predict_proba(X))])
             else:
                 raise Exception
@@ -161,7 +157,7 @@ class DPMModel(DPMMPython):
             y = np.dot(self._invchol[j], (X - self._mu[j]).T)  # (D, N)
             log_prob[:, j] = np.sum(np.square(y), axis=0)   # (N,)
 
-        denom_weights = self._weights * self._det_sigma_inv_sqrt
+        #denom_weights = self._weights * self._det_sigma_inv_sqrt
     
         log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 0.5 * log_prob)   # (N, K)
         resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
@@ -169,6 +165,9 @@ class DPMModel(DPMMPython):
 
         return resp
     
+    # def logsumexp(x):
+    #     c = x.max()
+    #     return c + np.log(np.sum(np.exp(x - c)))
         
     def __init__(self, *args, **kwargs):
         """
@@ -208,7 +207,7 @@ class DPMModel(DPMMPython):
             self._invsigma[i-1] = jl.eval(f"dpmm[2][{i}].invΣ")
             self._invchol[i-1] = jl.eval(f"dpmm[2][{i}].invChol")
         
-        self._det_sigma_inv_sqrt = 1/np.sqrt(np.exp(self._logdetsigma))
+        #self._det_sigma_inv_sqrt = 1/np.sqrt(np.exp(self._logdetsigma))
         
 if __name__ == "__main__":
     j = julia.Julia()
