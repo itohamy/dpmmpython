@@ -126,6 +126,10 @@ class DPMModel(DPMMPython):
         if len(X.shape) == 1:
             if X.shape[0] == self._d:
                 # to conform to expected output from sklearn
+                pp = self.predict_proba(X)
+                print(pp)
+                print('---')
+                print([np.argmax(pp)])
                 return np.array([np.argmax(self.predict_proba(X))])
             else:
                 raise Exception
@@ -151,24 +155,18 @@ class DPMModel(DPMMPython):
         else:
             n_samples, n_features = X.shape
         
-        log_prob = np.empty((n_samples, self._k))
+        log_prob = np.empty((n_samples, self._k))  # (N, K)
     
         for j in range(self._k):
-            y = np.dot(self._invchol[j], (X - self._mu[j]).T)
-            log_prob[:, j] = np.sum(np.square(y), axis=0)
-    
-        print('y', y.shape)
+            y = np.dot(self._invchol[j], (X - self._mu[j]).T)  # (D, N)
+            log_prob[:, j] = np.sum(np.square(y), axis=0)   # (N,)
 
         denom_weights = self._weights * self._det_sigma_inv_sqrt
     
-        log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 
-                           0.5 * log_prob)
-        print('log_resp_unnorm', log_resp_unnorm.shape)
-        resp_unnorm = np.exp(log_resp_unnorm)
-        print('resp_unnorm', resp_unnorm.shape)
-        resp = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T
+        log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 0.5 * log_prob)   # (N, K)
+        resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
+        resp = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T   # (N, K)
 
-        print('resp', resp.shape)
         return resp
     
         
