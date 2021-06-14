@@ -167,17 +167,18 @@ class DPMModel(DPMMPython):
         resp_unnorm2 = np.exp(log_resp_unnorm - logsum)     # (N, K)
         resp2 = (resp_unnorm2.T / np.sum(resp_unnorm2, axis=1)).T   # (N, K)
 
-        print(resp, resp2)
+        print(resp[2,0], resp2[2,0])
+        print(resp[50,0], resp2[50,0])
+        print(resp[40,1], resp2[40,1])
+        print(resp[20,2], resp2[20,2])
 
         return resp
     
     def logsumexp_trick(self, log_resp_unnorm):
         # log_resp_unnorm is (N,K)
         c = np.expand_dims(np.max(log_resp_unnorm, axis=1), axis=1)  # (N,1)
-        print('c', c.shape)
-        tmp = c + np.expand_dims(np.log(np.sum(np.exp(log_resp_unnorm - c), axis=1)), axis=-1)  # (N,1)
-        print('tmp', tmp.shape)
-        return tmp
+        results = c + np.expand_dims(np.log(np.sum(np.exp(log_resp_unnorm - c), axis=1)), axis=-1)  # (N,1)
+        return results
         
     def __init__(self, *args, **kwargs):
         """
