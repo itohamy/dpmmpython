@@ -170,7 +170,7 @@ class DPMModel(DPMMPython):
 
         c_k = self.logsumexp_trick(log_resp_unnorm)  # (N,K)
         resp3 = np.exp(c_k)  # (N,K)
-        S = np.sum(resp3, axis=1) 
+        S = np.expand_dims(np.sum(resp3, axis=1),axis=1)
         print(S.shape)
         resp4 =resp3/S
         print(resp4.shape)
