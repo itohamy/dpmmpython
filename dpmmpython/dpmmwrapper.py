@@ -164,24 +164,34 @@ class DPMModel(DPMMPython):
         # resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
         # resp = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T   # (N, K)
 
-        logsum = self.logsumexp_trick(log_resp_unnorm)   # (N, 1)
-        resp_unnorm2 = np.exp(log_resp_unnorm - logsum)     # (N, K)
-        resp2 = (resp_unnorm2.T / np.sum(resp_unnorm2, axis=1)).T   # (N, K)
+        #logsum = self.logsumexp_trick(log_resp_unnorm)   # (N, 1)
+        #resp_unnorm2 = np.exp(log_resp_unnorm - logsum)     # (N, K)
+        #resp2 = (resp_unnorm2.T / np.sum(resp_unnorm2, axis=1)).T   # (N, K)
 
-        return resp2
+        c_k = self.logsumexp_trick(log_resp_unnorm)  # (N,K)
+        resp3 = np.exp(c_k)  # (N,K)
+        S = np.sum(resp3, axis=1) 
+        print(S.shape)
+        resp4 =resp3/S
+        print(resp4.shape)
+
+        print(resp4)
+
+        return resp4
     
     def logsumexp_trick(self, log_resp_unnorm):
         # log_resp_unnorm is (N,K)
         c = np.expand_dims(np.max(log_resp_unnorm, axis=1), axis=1)  # (N,1)
         results = c + np.expand_dims(np.log(np.sum(np.exp(log_resp_unnorm - c), axis=1)), axis=-1)  # (N,1)
-        return results
+
+        return log_resp_unnorm - c #results
         
     def __init__(self, *args, **kwargs):
         """
         dpmm: output from DPMMPython.fit()
         """
         
-        print("Irit's wrapper!")
+        print("Irit's wrapper ??!")
 
         from julia import Main as jl # Objects attached -> use local namespace
         if 'seed' in kwargs:
