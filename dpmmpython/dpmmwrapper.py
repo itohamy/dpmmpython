@@ -162,7 +162,7 @@ class DPMModel(DPMMPython):
         #resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
         #res_orig = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T   # (N, K)
 
-        c_k = self.logsumexp_trick_oren(log_resp_unnorm)  # (N,K)
+        c_k = self.logsumexp_trick(log_resp_unnorm)  # (N,K)
         c_k_exp = np.exp(c_k)  # (N,K)
         exp_sum = np.expand_dims(np.sum(c_k_exp, axis=1), axis=1)  # (N,1)
         res =c_k_exp / exp_sum
