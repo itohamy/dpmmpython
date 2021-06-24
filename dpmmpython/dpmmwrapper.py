@@ -156,8 +156,6 @@ class DPMModel(DPMMPython):
         for j in range(self._k):
             y = np.dot(self._invchol[j], (X - self._mu[j]).T)  # (D, N)
             log_prob[:, j] = np.sum(np.square(y), axis=0)   # (N,)
-
-        #denom_weights = self._weights * self._det_sigma_inv_sqrt
     
         log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 0.5 * log_prob)   # (N, K)
         
@@ -180,6 +178,8 @@ class DPMModel(DPMMPython):
         print('res_irit', res_irit)
         print('---')
         print('res_oren', res_oren)
+        print('---')
+        print('resp_unnorm2', resp_unnorm2)
 
         return res_oren
     
@@ -201,7 +201,7 @@ class DPMModel(DPMMPython):
         dpmm: output from DPMMPython.fit()
         """
         
-        print("Irit's wrapper ??!")
+        print("Irit's wrapper!")
 
         from julia import Main as jl # Objects attached -> use local namespace
         if 'seed' in kwargs:
