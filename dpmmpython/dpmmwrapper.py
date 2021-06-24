@@ -159,38 +159,18 @@ class DPMModel(DPMMPython):
     
         log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 0.5 * log_prob)   # (N, K)
         
-        resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
-        res_orig = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T   # (N, K)
-
-        logsum = self.logsumexp_trick(log_resp_unnorm)   # (N, 1)
-        resp_unnorm2 = np.exp(log_resp_unnorm - logsum)     # (N, K)
-        res_irit = (resp_unnorm2.T / np.sum(resp_unnorm2, axis=1)).T   # (N, K)
+        #resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
+        #res_orig = (resp_unnorm.T / np.sum(resp_unnorm, axis=1)).T   # (N, K)
 
         c_k = self.logsumexp_trick_oren(log_resp_unnorm)  # (N,K)
         c_k_exp = np.exp(c_k)  # (N,K)
-        exp_sum = np.expand_dims(np.sum(c_k_exp, axis=1), axis=1)
-        print(exp_sum.shape)
-        res_oren =c_k_exp / exp_sum
-        print(res_oren.shape)
+        exp_sum = np.expand_dims(np.sum(c_k_exp, axis=1), axis=1)  # (N,1)
+        res =c_k_exp / exp_sum
 
-        print('res_orig', res_orig)
-        print('---')
-        print('res_irit', res_irit)
-        print('---')
-        print('res_oren', res_oren)
-        print('---')
-        print('resp_unnorm2', resp_unnorm2)
+        return res
 
-        return res_oren
     
     def logsumexp_trick(self, log_resp_unnorm):
-        # log_resp_unnorm is (N,K)
-        c = np.expand_dims(np.max(log_resp_unnorm, axis=1), axis=1)  # (N,1)
-        results = c + np.expand_dims(np.log(np.sum(np.exp(log_resp_unnorm - c), axis=1)), axis=-1)  # (N,1)
-
-        return results
-    
-    def logsumexp_trick_oren(self, log_resp_unnorm):
         # log_resp_unnorm is (N,K)
         c = np.expand_dims(np.max(log_resp_unnorm, axis=1), axis=1)  # (N,1)
 
