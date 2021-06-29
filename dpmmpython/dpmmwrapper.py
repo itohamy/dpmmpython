@@ -157,6 +157,7 @@ class DPMModel(DPMMPython):
             y = np.dot(self._invchol[j], (X - self._mu[j]).T)  # (D, N)
             log_prob[:, j] = np.sum(np.square(y), axis=0)   # (N,)
     
+        print('k:', self._k.shape, 'weights:', self._weights, 'logdetsigma:', self._logdetsigma, 'log_prob:', log_prob)
         log_resp_unnorm = (np.log(self._weights) - 0.5 * self._logdetsigma - 0.5 * log_prob)   # (N, K)
         
         #resp_unnorm = np.exp(log_resp_unnorm)     # (N, K)
