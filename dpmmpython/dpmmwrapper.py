@@ -42,7 +42,7 @@ class DPMMPython:
 
     @staticmethod
     def fit(data,alpha, prior = None,
-            iterations= 100, verbose = False,
+            iterations= 100, init_clusters=1, verbose = False,
             burnout = 15, gt = None, outlier_weight = 0, outlier_params = None):
         """
         Wrapper for DPMMSubClusters fit, refer to "https://bgu-cs-vil.github.io/DPMMSubClusters.jl/stable/usage/" for specification
@@ -51,11 +51,13 @@ class DPMMPython:
         """
         if prior == None:
             results = DPMMSubClusters.fit(data,alpha, iters = iterations,
+                                          init_clusters= init_clusters,
                                           verbose = verbose, burnout = burnout,
                                           gt = gt, outlier_weight = outlier_weight,
                                           outlier_params = outlier_params)
         else:
             results = DPMMSubClusters.fit(data, prior.to_julia_prior(), alpha, iters=iterations,
+                                          init_clusters= init_clusters,
                                           verbose=verbose, burnout=burnout,
                                           gt=gt, outlier_weight=outlier_weight,
                                           outlier_params=outlier_params)
