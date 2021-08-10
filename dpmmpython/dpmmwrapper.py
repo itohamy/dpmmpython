@@ -150,6 +150,7 @@ class DPMModel(DPMMPython):
         
         if len(X.shape) == 1:
             n_features = X.shape[0]
+            n_samples = 1
         else:
             n_samples, n_features = X.shape
         
