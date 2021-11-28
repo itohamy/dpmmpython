@@ -120,8 +120,9 @@ class DPMModel(DPMMPython):
         X :: NxD where N is number of new observations and D is dimensionality
         
         Returns an Nx1 array of most likely labels
-        n.b.: Results generated in Julia have labels that begin at 1, 
-        in this output the first component has label 0.
+
+        n.b.: the labels are according to Julia, which means indices starts with 1.
+        Here we return the original labels that are aligned with the init_labels.
         """
         
         
@@ -135,8 +136,12 @@ class DPMModel(DPMMPython):
         elif X.shape[1] != self._d:
             raise Exception
         else:
-            likely_labels = np.argmax(self.predict_proba(X), 1)
-            return [self._label_mapping[x] for x in likely_labels]
+            predicted_labels = np.argmax(self.predict_proba(X), 1)
+            predicted_labels_mapped = [self._label_mapping[x] for x in predicted_labels]
+
+            predicted_centroids = np.array([self._mu[l] for l in predicted_labels])  # N x D
+
+            return predicted_labels_mapped, predicted_centroids
   
         
     def predict_proba(self, X: np.array) -> np.array:
@@ -186,7 +191,7 @@ class DPMModel(DPMMPython):
         dpmm: output from DPMMPython.fit()
         """
         
-        print("Irit's wrapper!")
+        print("Irit's wrapper (return centroids)!")
 
         from julia import Main as jl # Objects attached -> use local namespace
         if 'seed' in kwargs:
