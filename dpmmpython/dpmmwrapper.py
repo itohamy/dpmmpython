@@ -128,9 +128,12 @@ class DPMModel(DPMMPython):
         
         if len(X.shape) == 1:
             if X.shape[0] == self._d:
-                # to conform to expected output from sklearn
-                likely_label = np.array([np.argmax(self.predict_proba(X))])
-                return self._label_mapping[likely_label]
+                predicted_label = np.array([np.argmax(self.predict_proba(X))])
+                predicted_label_mapped = self._label_mapping[predicted_label]
+
+                predicted_centroid = self._mu[predicted_label]   # 1 x D
+
+                return predicted_label_mapped, predicted_centroid
             else:
                 raise Exception
         elif X.shape[1] != self._d:
