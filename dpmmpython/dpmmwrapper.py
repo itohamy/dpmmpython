@@ -132,8 +132,9 @@ class DPMModel(DPMMPython):
                 predicted_label_mapped = self._label_mapping[predicted_label]
 
                 predicted_centroid = self._mu[predicted_label]   # 1 x D
+                predicted_sigma = self._sigma[predicted_label]   # 1 x D x D
 
-                return predicted_label_mapped, predicted_centroid
+                return predicted_label_mapped, predicted_centroid, predicted_sigma
             else:
                 raise Exception
         elif X.shape[1] != self._d:
@@ -143,8 +144,9 @@ class DPMModel(DPMMPython):
             predicted_labels_mapped = [self._label_mapping[x] for x in predicted_labels]
 
             predicted_centroids = np.array([self._mu[l] for l in predicted_labels])  # N x D
+            predicted_sigmas = np.array([self._sigma[l] for l in predicted_labels])  # N x D x D
 
-            return predicted_labels_mapped, predicted_centroids
+            return predicted_labels_mapped, predicted_centroids, predicted_sigmas
   
         
     def predict_proba(self, X: np.array) -> np.array:
